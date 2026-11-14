@@ -7,6 +7,8 @@ so the paint bucket always does exactly what a child expects.
 
 *"Paintpot" is a working name; see [Naming](#naming).*
 
+![Paintpot screenshot](screenshots/paintpot.png)
+
 ## Features
 
 - **Tools** (classic toolbox order): Select, Eraser / Color eraser, Fill, Pick color,
