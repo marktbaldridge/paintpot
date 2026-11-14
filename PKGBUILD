@@ -1,12 +1,12 @@
 # Maintainer: Mark Baldridge <marktbaldridge@gmail.com>
 pkgname=paintpot
-pkgver=0.1.1
+pkgver=0.1.2
 pkgrel=1
 pkgdesc="A fast, friendly, pixel-perfect paint program in the spirit of classic MS Paint"
 arch=('x86_64')
 url="https://github.com/marktbaldridge/paintpot"
 license=('MIT' 'Apache-2.0')
-depends=('gcc-libs' 'glibc' 'libxkbcommon' 'libglvnd')
+depends=('gcc-libs' 'glibc' 'libxkbcommon' 'libglvnd' 'hicolor-icon-theme')
 optdepends=(
     'wayland: Wayland display backend'
     'libx11: X11 display backend'
@@ -16,9 +16,9 @@ optdepends=(
     'mesa: OpenGL/EGL driver (or an equivalent GPU driver)'
     'xdg-desktop-portal: native file open/save dialogs'
 )
-makedepends=('cargo')
+makedepends=('cargo' 'librsvg')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('5634ee1f8b5be68a975bd027ebc6ec5df39f5c592304b618b00751f1be9946bf')
+sha256sums=('SKIP')
 
 prepare() {
     cd "$pkgname-$pkgver"
@@ -41,4 +41,12 @@ package() {
     install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
     install -Dm644 "$pkgname.desktop" "$pkgdir/usr/share/applications/$pkgname.desktop"
+
+    install -Dm644 "assets/$pkgname.svg" \
+        "$pkgdir/usr/share/icons/hicolor/scalable/apps/$pkgname.svg"
+    for size in 16 22 24 32 48 64 128 256; do
+        install -d "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps"
+        rsvg-convert -w "$size" -h "$size" "assets/$pkgname.svg" \
+            -o "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/$pkgname.png"
+    done
 }

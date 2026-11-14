@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FC2B0"/>
+      <stop offset="1" stop-color="#1C8F86"/>
+    </linearGradient>
+    <linearGradient id="pot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E7ECEE"/>
+    </linearGradient>
+    <linearGradient id="paint" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF5E62"/>
+      <stop offset="0.5" stop-color="#FFC24B"/>
+      <stop offset="1" stop-color="#5BD8E0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="256" height="256" rx="48" fill="url(#bg)"/>
+
+  <!-- accent paint drops -->
+  <circle cx="54" cy="66" r="15" fill="#FFD93D"/>
+  <circle cx="200" cy="54" r="12" fill="#FF6B6B"/>
+  <circle cx="206" cy="194" r="13" fill="#9B6BFF"/>
+
+  <!-- pail handle -->
+  <path d="M 100 118 Q 128 84 156 118" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- brush, resting across the pot -->
+  <g transform="rotate(-38 150 150)">
+    <rect x="144" y="40" width="16" height="92" rx="7" fill="#FFD23F"/>
+    <rect x="141" y="128" width="22" height="14" rx="3" fill="#C7CDD1"/>
+    <path d="M 141 142 L 163 142 L 155 168 L 149 168 Z" fill="#3A3A3A"/>
+  </g>
+
+  <!-- pot rim / paint well -->
+  <ellipse cx="128" cy="118" rx="48" ry="13" fill="url(#pot)"/>
+  <ellipse cx="128" cy="117" rx="36" ry="8" fill="url(#paint)"/>
+
+  <!-- pot body -->
+  <path d="M 84 120
+           C 84 120 86 196 92 204
+           C 100 214 156 214 164 204
+           C 170 196 172 120 172 120
+           Z" fill="url(#pot)"/>
+
+  <!-- body shading line -->
+  <path d="M 90 134 C 90 134 92 192 98 200" fill="none" stroke="#D7DEE1" stroke-width="3" stroke-linecap="round"/>
+</svg>
