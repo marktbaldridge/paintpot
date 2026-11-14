@@ -20,14 +20,6 @@ const ZOOMS: [f32; 13] = [0.125, 0.25, 0.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 
 const CANVAS_BG: Color32 = Color32::from_rgb(196, 202, 212);
 const DEFAULT_SIZE: (usize, usize) = (800, 600);
 
-/// The classic 28-colour palette.
-const PALETTE: [[u8; 3]; 28] = [
-    [0, 0, 0], [128, 128, 128], [128, 0, 0], [128, 128, 0], [0, 128, 0], [0, 128, 128], [0, 0, 128],
-    [128, 0, 128], [128, 128, 64], [0, 64, 64], [0, 128, 255], [0, 64, 128], [64, 0, 255], [128, 64, 0],
-    [255, 255, 255], [192, 192, 192], [255, 0, 0], [255, 255, 0], [0, 255, 0], [0, 255, 255], [0, 0, 255],
-    [255, 0, 255], [255, 255, 128], [0, 255, 128], [128, 255, 255], [128, 128, 255], [255, 0, 128], [255, 128, 64],
-];
-
 pub struct Options {
     brush_shape: BrushShape,
     brush_size: u32,
@@ -153,7 +145,9 @@ pub struct PaintApp {
     opts: Options,
     primary: Color32,
     secondary: Color32,
-    palette: Vec<Color32>,
+    /// Palette presets (edits to swatches stay with their preset) and the one shown.
+    palettes: Vec<crate::palette::Preset>,
+    palette_idx: usize,
     op: Op,
     button: Option<PointerButton>,
     sel: Option<Selection>,
@@ -307,7 +301,8 @@ impl PaintApp {
             opts: Options::default(),
             primary: Color32::BLACK,
             secondary: Color32::WHITE,
-            palette: PALETTE.iter().map(|c| Color32::from_rgb(c[0], c[1], c[2])).collect(),
+            palettes: crate::palette::presets(),
+            palette_idx: 0,
             op: Op::None,
             button: None,
             sel: None,
@@ -1645,7 +1640,10 @@ impl PaintApp {
             });
             ui.add_space(4.0);
             ui.separator();
-            egui::Frame::new().inner_margin(2.0).show(ui, |ui| self.tool_options(ui));
+            // On short screens the options scroll instead of being cut off.
+            egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui| {
+                egui::Frame::new().inner_margin(2.0).show(ui, |ui| self.tool_options(ui));
+            });
         })
         .response
         .rect
@@ -1765,13 +1763,13 @@ bucket can fill cleanly.");
                 }
                 ui.add_space(6.0);
 
-                let half = self.palette.len() / 2;
+                let half = self.palettes[self.palette_idx].colors.len() / 2;
                 ui.vertical(|ui| {
                     ui.spacing_mut().item_spacing = vec2(3.0, 3.0);
                     for row in 0..2 {
                         ui.horizontal(|ui| {
                             for i in row * half..(row + 1) * half {
-                                let c = self.palette[i];
+                                let c = self.palettes[self.palette_idx].colors[i];
                                 let (r, resp) = ui.allocate_exact_size(vec2(20.0, 20.0), Sense::click());
                                 ui.painter().rect_filled(r, 2.0, c);
                                 let hl = if resp.hovered() { Color32::from_rgb(40, 100, 220) } else { Color32::from_gray(110) };
@@ -1788,6 +1786,22 @@ bucket can fill cleanly.");
                             }
                         });
                     }
+                });
+                ui.add_space(10.0);
+                ui.vertical(|ui| {
+                    ui.label("Palette");
+                    let names: Vec<&str> = self.palettes.iter().map(|p| p.name).collect();
+                    egui::ComboBox::from_id_salt("palette")
+                        .selected_text(names[self.palette_idx])
+                        .show_ui(ui, |ui| {
+                            for (i, name) in names.iter().enumerate() {
+                                ui.selectable_value(&mut self.palette_idx, i, *name);
+                            }
+                        })
+                        .response
+                        .on_hover_text("Classic: the XP-era Paint colors.
+OKLCH: evenly spaced hues at equal brightness,
+dark and muted on top, light and saturated below.");
                 });
             });
             ui.add_space(2.0);
@@ -1956,7 +1970,7 @@ bucket can fill cleanly.");
                 ColorTarget::Primary => self.primary = c,
                 ColorTarget::Secondary => self.secondary = c,
                 ColorTarget::Palette(i) => {
-                    self.palette[i] = c;
+                    self.palettes[self.palette_idx].colors[i] = c;
                     self.primary = c;
                 }
             },
@@ -2010,7 +2024,11 @@ fn size_picker(ui: &mut Ui, value: &mut u32, sizes: &[u32], square: bool) {
 }
 
 fn line_width_picker(ui: &mut Ui, value: &mut u32) {
-    ui.label("Line width");
+    let title = format!("Width · {value}");
+    collapsible(ui, "line_width", &title, |ui| line_width_rows(ui, value));
+}
+
+fn line_width_rows(ui: &mut Ui, value: &mut u32) {
     for w in [1u32, 2, 3, 4, 5, 8, 12] {
         let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 16.0), Sense::click());
         let selected = *value == w;
@@ -2029,7 +2047,24 @@ fn line_width_picker(ui: &mut Ui, value: &mut u32) {
 }
 
 fn fill_style_picker(ui: &mut Ui, value: &mut FillStyle) {
-    ui.label("Style");
+    let name = match value {
+        FillStyle::Outline => "line",
+        FillStyle::OutlineFill => "both",
+        FillStyle::Fill => "solid",
+    };
+    let title = format!("Style · {name}");
+    collapsible(ui, "fill_style", &title, |ui| fill_style_rows(ui, value));
+}
+
+/// A section of the tool options that can be folded away to save vertical space. Its open
+/// state is remembered by `id`, so it stays folded when switching between tools.
+fn collapsible(ui: &mut Ui, id: &str, title: &str, body: impl FnOnce(&mut Ui)) {
+    // Unindented body: the panel is narrow, so the rows keep its full width. (Shrinking
+    // `spacing.indent` instead would also move the title on top of the arrow.)
+    egui::CollapsingHeader::new(title).id_salt(id).default_open(true).show_unindented(ui, body);
+}
+
+fn fill_style_rows(ui: &mut Ui, value: &mut FillStyle) {
     for (style, tip) in [
         (FillStyle::Outline, "Outline only"),
         (FillStyle::OutlineFill, "Outline (primary) filled with secondary"),
@@ -2444,6 +2479,19 @@ mod tests {
     }
 
     #[test]
+    fn palettes_switch_and_keep_their_own_edits() {
+        let mut a = app();
+        assert_eq!(a.palettes[a.palette_idx].name, "Classic");
+        a.run_post(Post::SetColor(ColorTarget::Palette(3), Color32::from_rgb(1, 2, 3)));
+        assert_eq!(a.primary, Color32::from_rgb(1, 2, 3), "editing a swatch also picks it");
+        a.palette_idx = 1;
+        assert_eq!(a.palettes[1].name, "OKLCH");
+        assert_ne!(a.palettes[1].colors[3], Color32::from_rgb(1, 2, 3), "other preset untouched");
+        a.palette_idx = 0;
+        assert_eq!(a.palettes[0].colors[3], Color32::from_rgb(1, 2, 3), "edit kept when switching back");
+    }
+
+    #[test]
     fn canvas_resize_and_transform() {
         let mut a = app();
         a.doc.img.set(0, 0, R);
@@ -2470,6 +2518,8 @@ mod ui_tests {
     fn tool_options_fit_the_panel() {
         let ctx = egui::Context::default();
         let mut a = PaintApp::create(&ctx, None);
+        a.opts.line_width = 12; // widest section titles: "Width · 12", "Style · solid"
+        a.opts.fill_style = FillStyle::Fill;
         for t in Tool::ALL {
             a.tool = t;
             let mut width = 0.0;
@@ -2480,8 +2530,8 @@ mod ui_tests {
                 };
                 let _ = ctx.run(input, |ctx| width = a.tool_panel(ctx));
             }
-            // The panel adds its own small frame margin around exact_width.
-            assert!(width <= TOOL_PANEL_WIDTH + 20.0, "{t:?} options widen the tool panel to {width}");
+            // The panel adds its own 4px frame margin around exact_width; nothing more.
+            assert!(width <= TOOL_PANEL_WIDTH + 4.5, "{t:?} options widen the tool panel to {width}");
         }
     }
 }

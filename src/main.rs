@@ -5,6 +5,7 @@ mod app;
 mod canvas;
 mod doc;
 mod io;
+mod palette;
 mod raster;
 mod text;
 mod tools;
