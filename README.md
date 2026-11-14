@@ -116,6 +116,21 @@ cargo run --release
 
 File dialogs use the XDG desktop portal (works on GNOME, KDE and most desktops).
 
+**Arch Linux:**
+
+A [`PKGBUILD`](PKGBUILD) is included in this repo. To build and install a package from source:
+
+```sh
+curl -LO https://raw.githubusercontent.com/marktbaldridge/paintpot/main/PKGBUILD
+makepkg -si
+```
+
+This pulls a tagged release tarball, builds it with `cargo`, runs the test suite, and
+installs `paintpot` via `pacman`. Only `cargo` is needed to build; everything else
+(`libxkbcommon`, Wayland/X11, Mesa, `xdg-desktop-portal`) is a normal runtime dependency
+already present on most desktop installs. No AUR package yet — this is the first step
+toward one.
+
 ## Roadmap ideas
 
 - Free-form selection; moving the caret inside text being typed
