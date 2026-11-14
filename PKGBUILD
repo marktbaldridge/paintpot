@@ -18,7 +18,7 @@ optdepends=(
 )
 makedepends=('cargo' 'librsvg')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('2f64dec045ab4f6a52cd277ea544c4a4c51848f890a4d9aae93fb830ae23a06a')
 
 prepare() {
     cd "$pkgname-$pkgver"
