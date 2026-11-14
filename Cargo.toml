@@ -1,0 +1,26 @@
+[package]
+name = "paintpot"
+version = "0.1.0"
+edition = "2021"
+description = "A friendly, fast, pixel-perfect paint program in the spirit of classic MS Paint"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+eframe = "0.31"
+egui_extras = { version = "0.31", features = ["svg"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "gif", "tiff", "webp", "ico"] }
+rfd = "0.15"
+arboard = "3"
+fontdb = "0.23"
+ab_glyph = "0.2"
+
+# Keep debug builds usable: optimise dependencies (egui, image codecs) even in dev.
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
