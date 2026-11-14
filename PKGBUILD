@@ -1,6 +1,6 @@
 # Maintainer: Mark Baldridge <marktbaldridge@gmail.com>
 pkgname=paintpot
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="A fast, friendly, pixel-perfect paint program in the spirit of classic MS Paint"
 arch=('x86_64')
@@ -18,7 +18,7 @@ optdepends=(
 )
 makedepends=('cargo')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('d76059db4500122ac43a06aa55f25bdd3935029b903b086d788ed64d5dd77136')
+sha256sums=('SKIP')
 
 prepare() {
     cd "$pkgname-$pkgver"
@@ -40,4 +40,5 @@ package() {
     cd "$pkgname-$pkgver"
     install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 "$pkgname.desktop" "$pkgdir/usr/share/applications/$pkgname.desktop"
 }
